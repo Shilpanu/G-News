@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GNews API - Live World News</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f4f6f9;
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 2px 20px rgba(0,0,0,0.1);
+        }
+
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .logo h1 {
+            font-size: 28px;
+        }
+
+        .live-indicator {
+            background: #ff4757;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
+        /* API Key Warning */
+        .api-warning {
+            background: #ff9800;
+            color: white;
+            padding: 10px;
+            text-align: center;
+            font-size: 14px;
+        }
+
+        .api-warning a {
+            color: white;
+            font-weight: bold;
+        }
+
+        /* Search Container */
+        .search-container {
+            max-width: 1400px;
+            margin: 20px auto;
+            padding: 0 20px;
+        }
+
+        .search-box {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .search-input-wrapper {
+            flex: 2;
+            position: relative;
+        }
+
+        .search-input-wrapper input {
+            width: 100%;
+            padding: 15px 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+
+        .search-input-wrapper input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .filter-group {
+            flex: 1;
+            display: flex;
+            gap: 10px;
+        }
+
+        select, button {
+            padding: 15px 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            font-size: 14px;
+            background: white;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            font-weight: bold;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        /* Categories */
+        .categories {
+            max-width: 1400px;
+            margin: 20px auto;
+            padding: 0 20px;
+            overflow-x: auto;
+        }
+
+        .category-buttons {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .cat-btn {
+            padding: 10px 24px;
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
+        }
+
+        .cat-btn:hover, .cat-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-color: transparent;
+        }
+
+        /* Stats */
+        .stats-bar {
+            max-width: 1400px;
+            margin: 20px auto;
+            padding: 0 20px;
+        }
+
+        .stats-content {
+            background: white;
+            padding: 15px 20px;
+            border-radius: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .badge {
+            background: #e8f0fe;
+            color: #667eea;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: bold;
+        }
+
+        /* News Grid */
+        .news-grid {
+            max-width: 1400px;
+            margin: 0 auto 40px;
+            padding: 0 20px;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+            gap: 25px;
+        }
+
+        .news-card {
+            background: white;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .news-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+        }
+
+        .card-image {
+            position: relative;
+            height: 220px;
+            overflow: hidden;
+        }
+
+        .card-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .source-badge {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: bold;
+        }
+
+        .card-content {
+            padding: 20px;
+        }
+
+        .card-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 12px;
+            line-height: 1.4;
+            color: #333;
+        }
+
+        .card-description {
+            color: #666;
+            font-size: 14px;
+            line-height: 1.6;
+            margin-bottom: 15px;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .card-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+            color: #999;
+            padding-top: 15px;
+            border-top: 1px solid #f0f0f0;
+        }
+
+        /* Loading */
+        .loading-container {
+            text-align: center;
+            padding: 60px;
+        }
+
+        .spinner {
+            width: 60px;
+            height: 60px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.9);
+            z-index: 2000;
+            overflow-y: auto;
+        }
+
+        .modal-content {
+            max-width: 800px;
+            margin: 50px auto;
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            position: relative;
+        }
+
+        .close-modal {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            font-size: 40px;
+            cursor: pointer;
+            color: #999;
+        }
+
+        .close-modal:hover {
+            color: #333;
+        }
+
+        /* Footer */
+        .footer {
+            background: #1a1a2e;
+            color: white;
+            text-align: center;
+            padding: 30px;
+            margin-top: 60px;
+        }
+
+        @media (max-width: 768px) {
+            .news-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .search-box {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-content">
+            <div class="logo">
+                <span style="font-size: 32px;">📰</span>
+                <h1>GNews API - Live News</h1>
+            </div>
+            <div class="live-indicator">
+                🔴 LIVE
+            </div>
+        </div>
+    </div>
+
+    <div id="apiWarning" class="api-warning" style="display: none;">
+        ⚠️ Please add your GNews API key. <a href="#" onclick="promptAPIKey()">Click here to add API key</a>
+    </div>
+
+    <div class="search-container">
+        <div class="search-box">
+            <div class="search-input-wrapper">
+                <input type="text" id="searchInput" placeholder="Search news headlines, topics, or keywords...">
+            </div>
+            <div class="filter-group">
+                <select id="countrySelect">
+                    <option value="">🌍 All Countries</option>
+                    <option value="us">🇺🇸 United States</option>
+                    <option value="gb">🇬🇧 United Kingdom</option>
+                    <option value="in">🇮🇳 India</option>
+                    <option value="ca">🇨🇦 Canada</option>
+                    <option value="au">🇦🇺 Australia</option>
+                    <option value="de">🇩🇪 Germany</option>
+                    <option value="fr">🇫🇷 France</option>
+                    <option value="jp">🇯🇵 Japan</option>
+                    <option value="br">🇧🇷 Brazil</option>
+                </select>
+                <button id="searchBtn">🔍 Search</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="categories">
+        <div class="category-buttons">
+            <button class="cat-btn active" data-category="general">All News</button>
+            <button class="cat-btn" data-category="world">World</button>
+            <button class="cat-btn" data-category="business">Business</button>
+            <button class="cat-btn" data-category="technology">Technology</button>
+            <button class="cat-btn" data-category="entertainment">Entertainment</button>
+            <button class="cat-btn" data-category="sports">Sports</button>
+            <button class="cat-btn" data-category="science">Science</button>
+            <button class="cat-btn" data-category="health">Health</button>
+        </div>
+    </div>
+
+    <div class="stats-bar" id="statsBar" style="display: none;">
+        <div class="stats-content">
+            <div>
+                <span class="badge" id="articleCount">0 Articles</span>
+                <span class="badge" id="sourceCount">0 Sources</span>
+            </div>
+            <div>
+                <span>🕒 Updated: <span id="updateTime">Just now</span></span>
+                <button id="refreshBtn" style="margin-left: 15px; padding: 8px 20px;">⟳ Refresh</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="newsContainer">
+        <div class="loading-container">
+            <div class="spinner"></div>
+            <h3>Loading live news from GNews API...</h3>
+            <p>Fetching real-time headlines from around the world</p>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>Powered by <strong>GNews API</strong> | Real-time news from trusted sources worldwide</p>
+        <p style="font-size: 12px; margin-top: 10px;">Get your free API key at <a href="https://gnews.io" style="color: white;" target="_blank">gnews.io</a></p>
+    </div>
+
+    <div id="articleModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <div id="modalBody"></div>
+        </div>
+    </div>
+
+    <script>
+        // ============================================
+        // GNews API Configuration - USE REAL API
+        // ============================================
+        // GET YOUR FREE API KEY FROM: https://gnews.io/
+        let GNEWS_API_KEY = localStorage.getItem('gnews_api_key') || '';
+        
+        const BASE_URL = 'https://gnews.io/api/v4';
+        
+        let currentCategory = 'general';
+        let currentCountry = '';
+        let currentSearch = '';
+        let currentArticles = [];
+        
+        // Check if API key exists
+        function checkAPIKey() {
+            if (!GNEWS_API_KEY || GNEWS_API_KEY === '') {
+                document.getElementById('apiWarning').style.display = 'block';
+                return false;
+            }
+            document.getElementById('apiWarning').style.display = 'none';
+            return true;
+        }
+        
+        // Prompt for API key
+        window.promptAPIKey = function() {
+            const key = prompt('Enter your GNews API key from https://gnews.io/');
+            if (key && key.trim()) {
+                localStorage.setItem('gnews_api_key', key.trim());
+                GNEWS_API_KEY = key.trim();
+                checkAPIKey();
+                fetchNews();
+            }
+        };
+        
+        // ============================================
+        // Fetch REAL News from GNews API
+        // ============================================
+        async function fetchNews() {
+            if (!checkAPIKey()) {
+                showAPIKeyError();
+                return;
+            }
+            
+            showLoading();
+            
+            try {
+                let endpoint = '';
+                let params = new URLSearchParams();
+                
+                params.append('token', GNEWS_API_KEY);
+                params.append('lang', 'en');
+                params.append('max', '30');
+                params.append('sortby', 'publishedAt');
+                
+                if (currentCountry && currentCountry !== '') {
+                    params.append('country', currentCountry);
+                }
+                
+                if (currentSearch && currentSearch.trim() !== '') {
+                    endpoint = '/search';
+                    params.append('q', currentSearch);
+                } else {
+                    endpoint = '/top-headlines';
+                    if (currentCategory !== 'general') {
+                        params.append('topic', currentCategory);
+                    }
+                }
+                
+                const url = `${BASE_URL}${endpoint}?${params.toString()}`;
+                console.log('Fetching from:', url);
+                
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    if (data.message && data.message.includes('Invalid token')) {
+                        throw new Error('Invalid API key. Please check your GNews API key.');
+                    }
+                    throw new Error(data.message || `HTTP ${response.status}`);
+                }
+                
+                if (data.articles && data.articles.length > 0) {
+                    displayNews(data.articles);
+                    updateStats(data.articles);
+                } else {
+                    showNoResults();
+                }
+                
+            } catch (error) {
+                console.error('Error:', error);
+                showError(error.message);
+            }
+        }
+        
+        // ============================================
+        // Display News Cards
+        // ============================================
+        function displayNews(articles) {
+            const container = document.getElementById('newsContainer');
+            currentArticles = articles;
+            
+            // Get unique sources
+            const uniqueSources = [...new Set(articles.map(a => a.source?.name || 'Unknown'))];
+            document.getElementById('sourceCount').innerHTML = `${uniqueSources.length} Sources`;
+            document.getElementById('articleCount').innerHTML = `${articles.length} Articles`;
+            
+            const newsHTML = `
+                <div class="news-grid">
+                    ${articles.map((article, index) => `
+                        <div class="news-card" onclick="openArticleModal(${index})">
+                            <div class="card-image">
+                                <img src="${article.image || 'https://via.placeholder.com/800x450?text=No+Image'}" 
+                                     alt="${article.title}"
+                                     onerror="this.src='https://via.placeholder.com/800x450?text=News+Image'">
+                                <div class="source-badge">
+                                    📰 ${article.source?.name || 'News Source'}
+                                </div>
+                            </div>
+                            <div class="card-content">
+                                <h3 class="card-title">${escapeHtml(article.title) || 'No title'}</h3>
+                                <p class="card-description">${escapeHtml(article.description || article.content || 'Click to read full article...').substring(0, 150)}...</p>
+                                <div class="card-meta">
+                                    <span>🕒 ${formatDate(article.publishedAt)}</span>
+                                    <span>⏱️ ${estimateReadTime(article.description || article.content)} min read</span>
+                                </div>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+            
+            container.innerHTML = newsHTML;
+            document.getElementById('statsBar').style.display = 'block';
+            document.getElementById('updateTime').innerHTML = new Date().toLocaleTimeString();
+        }
+        
+        // ============================================
+        // Open Article Modal
+        // ============================================
+        function openArticleModal(index) {
+            const article = currentArticles[index];
+            if (!article) return;
+            
+            const modal = document.getElementById('articleModal');
+            const modalBody = document.getElementById('modalBody');
+            
+            modalBody.innerHTML = `
+                <h2 style="margin-bottom: 20px; color: #667eea;">${escapeHtml(article.title)}</h2>
+                <div style="margin-bottom: 20px;">
+                    <span class="badge">📰 ${article.source?.name || 'Unknown'}</span>
+                    <span class="badge">🕒 ${formatDate(article.publishedAt)}</span>
+                </div>
+                ${article.image ? `<img src="${article.image}" alt="${article.title}" style="width: 100%; border-radius: 12px; margin-bottom: 20px;" onerror="this.style.display='none'">` : ''}
+                <p style="line-height: 1.8; margin-bottom: 20px; font-size: 16px;">${escapeHtml(article.description || 'No description available')}</p>
+                <p style="line-height: 1.8; margin-bottom: 30px;">${escapeHtml(article.content || article.description || 'Full article content available on source website.')}</p>
+                <a href="${article.url}" target="_blank" style="display: inline-block; padding: 12px 30px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-decoration: none; border-radius: 10px;">Read Full Article →</a>
+            `;
+            
+            modal.style.display = 'block';
+        }
+        
+        // ============================================
+        // Helper Functions
+        // ============================================
+        function formatDate(dateString) {
+            if (!dateString) return 'Recently';
+            const date = new Date(dateString);
+            const now = new Date();
+            const diff = Math.floor((now - date) / 1000 / 60);
+            
+            if (diff < 1) return 'Just now';
+            if (diff < 60) return `${diff} minutes ago`;
+            if (diff < 1440) return `${Math.floor(diff / 60)} hours ago`;
+            if (diff < 43200) return `${Math.floor(diff / 1440)} days ago`;
+            return date.toLocaleDateString();
+        }
+        
+        function estimateReadTime(text) {
+            if (!text) return 1;
+            const wordsPerMinute = 200;
+            const wordCount = text.split(/\s+/).length;
+            return Math.max(1, Math.ceil(wordCount / wordsPerMinute));
+        }
+        
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        function updateStats(articles) {
+            const totalArticles = articles.length;
+            const uniqueSources = [...new Set(articles.map(a => a.source?.name))];
+            document.getElementById('articleCount').innerHTML = `${totalArticles} Articles`;
+            document.getElementById('sourceCount').innerHTML = `${uniqueSources.length} Sources`;
+        }
+        
+        function showLoading() {
+            document.getElementById('newsContainer').innerHTML = `
+                <div class="loading-container">
+                    <div class="spinner"></div>
+                    <h3>Fetching live news from GNews API...</h3>
+                    <p>Please wait while we gather headlines from around the world</p>
+                </div>
+            `;
+            document.getElementById('statsBar').style.display = 'none';
+        }
+        
+        function showError(message) {
+            document.getElementById('newsContainer').innerHTML = `
+                <div class="loading-container">
+                    <span style="font-size: 64px;">⚠️</span>
+                    <h2 style="color: #dc3545; margin: 20px 0;">Failed to Load News</h2>
+                    <p style="color: #666; margin-bottom: 20px;">${message}</p>
+                    <button onclick="fetchNews()" style="padding: 12px 30px; margin-top: 20px;">Try Again</button>
+                </div>
+            `;
+        }
+        
+        function showAPIKeyError() {
+            document.getElementById('newsContainer').innerHTML = `
+                <div class="loading-container">
+                    <span style="font-size: 64px;">🔑</span>
+                    <h2 style="margin: 20px 0;">GNews API Key Required</h2>
+                    <p style="color: #666; margin-bottom: 20px;">Get your free API key from <strong>gnews.io</strong> (100 requests/day free)</p>
+                    <button onclick="promptAPIKey()" style="padding: 12px 30px;">Add API Key</button>
+                </div>
+            `;
+        }
+        
+        function showNoResults() {
+            document.getElementById('newsContainer').innerHTML = `
+                <div class="loading-container">
+                    <span style="font-size: 64px;">📭</span>
+                    <h2 style="margin: 20px 0;">No News Found</h2>
+                    <p>Try changing the category, country, or search term</p>
+                    <button onclick="resetFilters()" style="margin-top: 20px; padding: 12px 30px;">Reset Filters</button>
+                </div>
+            `;
+        }
+        
+        function resetFilters() {
+            currentCategory = 'general';
+            currentCountry = '';
+            currentSearch = '';
+            document.getElementById('searchInput').value = '';
+            document.getElementById('countrySelect').value = '';
+            document.querySelectorAll('.cat-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.dataset.category === 'general') btn.classList.add('active');
+            });
+            fetchNews();
+        }
+        
+        // ============================================
+        // Event Listeners
+        // ============================================
+        document.getElementById('searchBtn').addEventListener('click', () => {
+            currentSearch = document.getElementById('searchInput').value;
+            currentCategory = 'general';
+            document.querySelectorAll('.cat-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelector('.cat-btn[data-category="general"]').classList.add('active');
+            fetchNews();
+        });
+        
+        document.getElementById('searchInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                currentSearch = e.target.value;
+                currentCategory = 'general';
+                fetchNews();
+            }
+        });
+        
+        document.getElementById('refreshBtn').addEventListener('click', () => {
+            fetchNews();
+        });
+        
+        document.querySelectorAll('.cat-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentCategory = btn.dataset.category;
+                currentSearch = '';
+                document.getElementById('searchInput').value = '';
+                fetchNews();
+            });
+        });
+        
+        document.getElementById('countrySelect').addEventListener('change', (e) => {
+            currentCountry = e.target.value;
+            fetchNews();
+        });
+        
+        // Close modal
+        document.querySelector('.close-modal').addEventListener('click', () => {
+            document.getElementById('articleModal').style.display = 'none';
+        });
+        
+        window.addEventListener('click', (e) => {
+            const modal = document.getElementById('articleModal');
+            if (e.target === modal) {
+                modal.style.display = 'none';
+            }
+        });
+        
+        // Auto-refresh every 5 minutes
+        setInterval(() => {
+            if (document.visibilityState === 'visible' && checkAPIKey()) {
+                fetchNews();
+            }
+        }, 300000);
+        
+        // Initialize
+        if (GNEWS_API_KEY && GNEWS_API_KEY !== '') {
+            fetchNews();
+        } else {
+            showAPIKeyError();
+        }
+    </script>
+</body>
+</html>
